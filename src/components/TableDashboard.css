@@ -1,0 +1,176 @@
+.dashboard-container {
+  padding: 16px;
+  overflow-x: auto;
+  background-color: var(--bg-secondary);
+}
+
+.dashboard-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: Arial, sans-serif;
+  font-size: 9px;
+  text-align: center;
+  table-layout: fixed;
+}
+
+.dashboard-table td {
+  border: 1px solid var(--border);
+  padding: 8px;
+  vertical-align: middle;
+  word-wrap: break-word;
+  white-space: pre-line;
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}
+
+/* Header row */
+.row-0 td {
+  background-color: var(--accent);
+  font-weight: bold;
+  color: var(--bg-primary);
+}
+
+/* Second row for subheaders */
+.row-1 td {
+  background-color: var(--warning);
+  font-weight: bold;
+  color: var(--bg-primary);
+}
+
+/* Green cells - adjusted for dark mode */
+.green {
+  background-color: var(--success);
+  color: var(--bg-primary);
+  font-weight: bold;
+  display: inline-block;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin: 1px 0;
+}
+
+/* Red strikethrough cells - adjusted for dark mode */
+.red {
+  color: var(--error);
+  text-decoration: line-through;
+  font-weight: bold;
+  display: inline-block;
+  margin: 1px 0;
+}
+
+/* Gray italic for extra text - adjusted for dark mode */
+.gray {
+  color: var(--text-secondary);
+  font-style: italic;
+  display: inline-block;
+  margin: 1px 0;
+}
+
+/* Orange header cells (E2E) - adjusted for dark mode */
+.col-4.row-1 {
+  background-color: var(--warning);
+  color: var(--bg-primary);
+}
+
+/* Dark gray header cells (PERF) - adjusted for dark mode */
+.col-5.row-1 {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* Light yellow section for misc rows - adjusted for dark mode */
+.row-13 td,
+.row-14 td,
+.row-15 td,
+.row-16 td,
+.row-17 td,
+.row-18 td,
+.row-19 td {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* Light blue last row (server names) - adjusted for dark mode */
+.row-20 td {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-weight: bold;
+}
+
+/* Dark mode specific adjustments */
+:root.dark .dashboard-container {
+  background-color: var(--bg-secondary);
+}
+
+:root.dark .dashboard-table td {
+  border-color: var(--border);
+}
+
+:root.dark .highlight-blue {
+  background-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+/* Ensure all text is visible in dark mode */
+:root.dark .cell {
+  color: var(--text-primary);
+}
+
+/* Improve contrast for specific elements in dark mode */
+:root.dark .row-0 td {
+  background-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+:root.dark .row-1 td {
+  background-color: var(--warning);
+  color: var(--bg-primary);
+}
+
+.cell span {
+  display: block;
+}
+
+.dashboard-outer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.dashboard-container {
+  width: 1100px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.highlight-blue {
+  background-color: var(--accent);
+  color: var(--bg-primary);
+  font-weight: bold;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: center;
+}
+
+.dashboard-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: Arial, sans-serif;
+}
+
+td[colspan] {
+  border-right: none;
+  border-left: none;
+}

@@ -1,0 +1,66 @@
+/* Critical errors: RED + blinking */
+.critical-blink {
+  color: #C40000 !important;
+  font-weight: bold;
+  animation: blink 1s linear infinite;
+} */
+
+/* Warning: Static yellow/orange, no blinking */
+
+ .warning-pulse {
+  color: #FFA500 !important;  
+  font-weight: bold;
+}
+
+
+/* Blinking animation for critical */
+@keyframes blink {
+  0%   { opacity: 1; }
+  60%  { opacity: 0.40; }
+  100% { opacity: 1; }
+}
+
+/* Pulse animation: warning */
+@keyframes pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Session card and table styles, as before */
+.session-card {
+  transition: transform 0.2s ease-in-out;
+}
+.session-card:hover {
+  transform: scale(1.03);
+}
+.MuiTableCell-root {
+  background-color: #F0F8FF;
+}
+.MuiTableRow-root:nth-of-type(odd) {
+  background-color: #460e0ec8;
+}
+.MuiTableRow-root:nth-of-type(even) {
+  background-color: #c01e1e;
+}
+
+/* Live monitoring button */
+.live-monitoring-blink {
+  background-color: #2ef434 !important; /* Green background */
+  color: white !important;
+  animation: blink 1s infinite;
+}
+
+.warning {
+  color: #FFA500 !important;
+  font-weight: bold;
+}
+
+
+.warning-pulse {
+  color: #FFA500 !important;
+  font-weight: bold;
+  animation: pulse 1.7s linear infinite;
+}
+
+

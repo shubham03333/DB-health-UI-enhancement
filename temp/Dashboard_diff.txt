@@ -1,0 +1,383 @@
+import { useNavigate } from 'react-router-dom';
+import {
+  Container,
+  Grid,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  CircularProgress,
+} from '@mui/material';
+import MonitoringChart from './MonitoringChart';
+import DataTable from './DataTable';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+
+import api from '../services/api';
+import { color } from 'chart.js/helpers';
+import './Dashboard.css';
+
+
+
+=======
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Container,
+  Grid,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  CircularProgress,
+} from '@mui/material';
+import MonitoringChart from './MonitoringChart';
+import DataTable from './DataTable';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+
+import api from '../services/api';
+
+import './Dashboard.css';
+
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+const Dashboard = () => {
+  const [connectionString, setConnectionString] = useState('');
+  const [maskedConnectionString, setMaskedConnectionString] = useState('');
+  const [data, setData] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  // Function to mask password in connection string
+  const maskConnectionString = (connStr) => {
+    // Example format: user/password@host
+    if (!connStr) return '';
+    const regex = /^(.*?\/)(.*?)(@.*)$/;
+    const match = connStr.match(regex);
+    if (match) {
+      return match[1] + '******' + match[3];
+    }
+    return connStr;
+  };
+
+  const handleFetchData = async () => {
+    if (!connectionString) return;
+    setLoading(true);
+    try {
+      const response = await api.post('/health/dynamic-monitor', { connectionString });
+      setData(response.data);
+      setMaskedConnectionString(maskConnectionString(connectionString));
+    } catch (error) {
+      console.error('Error while fetching monitoring data:', error);
+      setData({ error: 'Failed to fetch data from backend.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Updated getValueFromSection to handle multi-column rows for DB OPEN AND LOG MODE
+  const getValueFromSection = (sectionName) => {
+    const section = data[sectionName];
+
+    if (typeof section === 'string') {
+      return section;
+    }
+    if (Array.isArray(section)) {
+      if (sectionName === 'DB OPEN AND LOG MODE' && section.length > 0) {
+        // Concatenate all col values in the first row
+        const firstRow = section[0];
+        const values = Object.values(firstRow).filter(val => val && !/^[-\s]+$/.test(val));
+        return values.length ? values.join(' ') : 'N/A';
+      }
+      const cleanRows = section
+        .map(row => row?.col1 || row?.col2)
+        .filter(val => val && !/^[-\s]+$/.test(val));
+      return cleanRows.length ? cleanRows[cleanRows.length - 1] : 'N/A';
+    }
+    return 'N/A';
+  };
+
+  // Preprocess SGA and PGA data for MonitoringChart
+  const preprocessMemoryData = (memoryData) => {
+    if (!Array.isArray(memoryData)) return [];
+    return memoryData.map(item => {
+      // Combine col1, col2, col3 into label
+      const labelParts = [];
+      if (item.col1) labelParts.push(item.col1);
+      if (item.col2) labelParts.push(item.col2);
+      if (item.col3) labelParts.push(item.col3);
+      const label = labelParts.join(' ');
+      // Use col4 as value if present, else try col3 or col2
+      let value = 0;
+      if (item.col4) {
+        value = parseFloat(item.col4) || 0;
+      } else if (item.col3 && !isNaN(parseFloat(item.col3))) {
+        value = parseFloat(item.col3);
+      } else if (item.col2 && !isNaN(parseFloat(item.col2))) {
+        value = parseFloat(item.col2);
+      }
+      return { col1: label, col2: value.toString() };
+    });
+  };
+
+  // Preprocess rows to normalize columns for DataTable
+  const normalizeTableRows = (rows) => {
+    if (!Array.isArray(rows) || rows.length === 0) return rows;
+    // Get all unique keys from all rows
+    const allKeys = new Set();
+    rows.forEach(row => {
+      Object.keys(row).forEach(key => allKeys.add(key));
+    });
+    const keysArray = Array.from(allKeys);
+    // Normalize each row to have all keys
+    return rows.map(row => {
+      const newRow = {};
+      keysArray.forEach(key => {
+        newRow[key] = row[key] !== undefined ? row[key] : '';
+      });
+      return newRow;
+    });
+  };
+
+  // Preprocess TABLESPACE USAGE rows to add Free_GB column
+  const preprocessTablespaceRows = (rows) => {
+    if (!Array.isArray(rows) || rows.length === 0) return rows;
+    // Check if first row is header with col1, col2, col3 keys
+    const headerRow = rows[0];
+    const isGenericHeader = ['col1', 'col2', 'col3'].every(k => k in headerRow);
+    if (!isGenericHeader) return rows;
+
+    // Add col4 header for Free_GB
+    const newRows = [...rows];
+    newRows[0] = { ...newRows[0], col4: 'Free_GB' };
+
+    // For each data row, calculate Free_GB = Free_MB / 1024 rounded to 2 decimals
+    for (let i = 1; i < newRows.length; i++) {
+      const freeMB = parseFloat(newRows[i].col3);
+      newRows[i] = {
+        ...newRows[i],
+        col4: isNaN(freeMB) ? '' : (freeMB / 1024).toFixed(2)
+      };
+    }
+    return newRows;
+  };
+
+  const getAlertLevel = (label, value) => {
+    const warningThresholds = {
+      "OS LOAD": 3,
+      "REDO LOG SPACE REQUESTS": 5,
+      "UPTIME": 500 // example warning threshold in hours
+    };
+    const criticalThresholds = {
+      "OS LOAD": 5,
+      "REDO LOG SPACE REQUESTS": 10,
+      "UPTIME": 1000 // example critical threshold in hours
+    };
+
+    const numericValue = parseFloat(value);
+    console.log(`Alert check for ${label}: value=${value}, numericValue=${numericValue}`);
+    if (isNaN(numericValue)) return null;
+
+    if (criticalThresholds[label] && numericValue > criticalThresholds[label]) {
+      console.log(`Critical alert for ${label}`);
+      return 'critical';
+    }
+    if (warningThresholds[label] && numericValue > warningThresholds[label]) {
+      console.log(`Warning alert for ${label}`);
+      return 'warning';
+    }
+    return null;
+  };
+
+  return (
+    <Container maxWidth="xl" sx={{ mt: 4 }}>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          Oracle DB Health Monitoring
+        </Typography>
+
+        <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
+          <TextField
+            label="SQL*Plus Connection String"
+            fullWidth
+            multiline
+            minRows={1}
+            maxRows={3}
+            value={maskedConnectionString || connectionString}
+            onChange={(e) => {
+              setConnectionString(e.target.value);
+              setMaskedConnectionString('');
+            }}
+            placeholder="e.g., user/password@host"
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleFetchData}
+            sx={{ minWidth: 150 }}
+          >
+            Monitor
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={loadDummyData}
+            sx={{ minWidth: 150 }}
+          >
+            Load Dummy Data
+          </Button>
+        </Box>
+      </Paper>
+
+      {loading ? (
+        <CircularProgress />
+      ) : (
+        Object.keys(data).length > 0 && (
+          <>
+            {data.error ? (
+              <Typography color="error">{data.error}</Typography>
+            ) : (
+              <>
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <Card variant="outlined" sx={{ p: 2 }}>
+                      <Typography variant="h5" gutterBottom style={{color:'purple'}}>
+                        Database Information
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {[
+                          "DATABASE NAME",
+                          "DATABASE VERSION",
+                          "INSTANCE NAME",
+                          "STARTUP TIME",
+                          "UPTIME",
+                          "OS LOAD",
+                          "REDO LOG SPACE REQUESTS",
+                          "DB MOUNT STATUS",
+                          "DB OPEN AND LOG MODE"
+                        ].map((label) => (
+                          <Grid item xs={12} sm={6} md={4} lg={4} key={label}>
+                            <Typography sx={{ color: '#FFC72C', fontWeight: 'bold' }}>
+                              <strong>{label.replace(/_/g, ' ')}:</strong>{" "}
+                              <span
+                                className={
+                                  (() => {
+                                    const alertLevel = getAlertLevel(label, getValueFromSection(label));
+                                    if (alertLevel === 'critical') return "blink";
+                                    if (alertLevel === 'warning') return "warning";
+                                    return "";
+                                  })()
+                                }
+                                style={
+                                  (() => {
+                                    const alertLevel = getAlertLevel(label, getValueFromSection(label));
+                                    if (alertLevel === 'critical') return { color: '#8B0000', fontWeight: 'bold', animation: 'blink 1s infinite' }; // DarkRed
+                                    if (alertLevel === 'warning') return { color: '#FFA500', fontWeight: 'bold' }; // Orange
+                                    return { color: '#0096FF' }; // Light Blue for values
+                                  })()
+                                }
+                              >
+                                {getValueFromSection(label)}
+                              </span>
+                            </Typography>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Card>
+                  </Grid>
+
+                  {[
+                    ["BLOCKING SESSIONS", "Blocking Sessions"],
+                    ["DEADLOCKS", "Deadlocks"],
+                    ["TABLESPACE USAGE", "Tablespaces"]
+                  ].map(([key, title]) =>
+                    data[key] ? (
+                      <Grid item xs={12} key={key}>
+                        <DataTable
+                          title={title}
+                          rows={key === "TABLESPACE USAGE" ? normalizeTableRows(preprocessTablespaceRows(data[key])) : normalizeTableRows(data[key])}
+                        />
+                      </Grid>
+                    ) : null
+                  )}
+
+                  {(data["SESSIONS"] || data["SGA"] || data["PGA"]) && (
+                    <>
+                      {data["SESSIONS"] && (
+                        <Grid item xs={12} md={6}>
+                          <Card variant="outlined" sx={{ p: 2 }}>
+                            <Typography variant="h6" gutterBottom>
+                              Session Status
+                            </Typography>
+
+                            {/* Display numerical values */}
+                            <Grid container spacing={2} sx={{ mb: 2 }}>
+
+                              {data["SESSIONS"].map((session, index) => (
+                                <Grid item xs={12} sm={6} key={index}>
+                                  <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }} className="session-card">
+                                    <Typography variant="subtitle2" color="textSecondary">
+                                      {session.col1}
+                                    </Typography>
+                                    <Typography variant="h6" color="primary">
+                                      {session.col2}
+                                    </Typography>
+                                  </Paper>
+                                </Grid>
+                              ))}
+                            </Grid>
+
+                            {/* Chart */}
+                            <MonitoringChart sessionData={data["SESSIONS"]} chartType="session" />
+
+                          </Card>
+                        </Grid>
+                      )}
+
+                      {(data["SGA"] || data["PGA"]) && (
+                        <Grid item xs={12} md={6}>
+                          <Card variant="outlined" sx={{ p: 2 }}>
+                            <Typography variant="h6" gutterBottom>
+                              Memory Usage
+                            </Typography>
+                            <div className="chart-spacing" style={{ height: '500px'}}>
+                              <MonitoringChart
+                                sgaData={preprocessMemoryData(data["SGA"] || [])}
+                                pgaData={preprocessMemoryData(data["PGA"] || [])}
+                                chartType="memory"
+                              />
+                            </div>
+
+                          </Card>
+                        </Grid>
+                      )}
+                    </>
+                  )}
+
+                  {[
+                    ["TOP WAIT EVENTS", "Top Wait Events"],
+                    ["BUFFER CACHE HIT RATIO", "Buffer Cache Hit Ratio"],
+                    ["ARCHIVE LOG GENERATION RATE", "Archive Log Generation Rate"],
+                    ["TOP SQL BY RESOURCE USAGE", "Top SQL by Resource Usage"],
+                    ["LIBRARY CACHE HIT RATIO", "Library Cache Hit Ratio"]
+
+                  ].map(([key, title]) =>
+                    data[key] ? (
+                      <Grid item xs={12} key={key}>
+                        <DataTable title={title} rows={normalizeTableRows(data[key])} />
+                      </Grid>
+                    ) : null
+                  )}
+
+                </Grid>
+              </>
+            )}
+          </>
+        )
+      )}
+    </Container>
+  );
+
+};
+
+=======
