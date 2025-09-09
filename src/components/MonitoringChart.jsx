@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -23,6 +24,7 @@ ChartJS.register(
 );
 
 const MonitoringChart = ({ sgaData = [], pgaData = [], sessionData = [], chartType }) => {
+  const theme = useTheme();
   const formatMemoryData = (label, data) => {
     const labels = data.map(item => item?.col1 || 'Unknown');
     const values = data.map(item => parseFloat(item?.col2) || 0);
@@ -31,8 +33,8 @@ const MonitoringChart = ({ sgaData = [], pgaData = [], sessionData = [], chartTy
       datasets: [{
         label,
         data: values,
-        backgroundColor: 'rgba(75,192,192,0.6)',
-        borderColor: 'rgba(75,192,192,1)',
+        backgroundColor: theme.palette.primary.main + '80', // 50% opacity
+        borderColor: theme.palette.primary.main,
         borderWidth: 1,
       }],
     };
@@ -42,11 +44,11 @@ const MonitoringChart = ({ sgaData = [], pgaData = [], sessionData = [], chartTy
     const labels = sessionData.map(item => item?.col1 || 'Unknown');
     const values = sessionData.map(item => parseInt(item?.col2) || 0);
 
-    // Assign colors: gray for "INACTIVE", green for "ACTIVE", default blue for others
+    // Assign colors: gray for "INACTIVE", warning for "ACTIVE", default primary for others
       const backgroundColor = labels.map(label => {
-        if (label.toUpperCase() === 'INACTIVE') return '#808080'; // Gray
-        if (label.toUpperCase() === 'ACTIVE') return '#FFA500'; // Orange
-        return '#42a5f5'; // Default blue
+        if (label.toUpperCase() === 'INACTIVE') return theme.palette.grey[500];
+        if (label.toUpperCase() === 'ACTIVE') return theme.palette.warning.main;
+        return theme.palette.primary.main;
       });
 
     return {
@@ -55,7 +57,7 @@ const MonitoringChart = ({ sgaData = [], pgaData = [], sessionData = [], chartTy
         label: 'Sessions',
         data: values,
         backgroundColor,
-        borderColor: '#fff',
+        borderColor: theme.palette.common.white,
         borderWidth: 1,
       }],
     };

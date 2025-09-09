@@ -13,7 +13,14 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import MonitoringChart from './MonitoringChart';
 import DataTable from './DataTable';
@@ -200,10 +207,51 @@ const dummyData = {
     { "col1": "1", "col2": "SYS", "col3": "ACTIVE", "col4": "1" },
     { "col1": "1", "col2": "XMIT_CIRCLE_BE", "col3": "INACTIVE", "col4": "1" }
   ],
+  "INVALID OBJECTS COUNT": [
+    { "col1": "OWNER", "col2": "OBJECT_TYPE", "col3": "COUNT(*)" },
+    { "col1": "M91363", "col2": "FUNCTION", "col3": "2" },
+    { "col1": "M91363", "col2": "PACKAGE_BODY", "col3": "9" },
+    { "col1": "M91363", "col2": "PROCEDURE", "col3": "7" },
+    { "col1": "M91363", "col2": "VIEW", "col3": "6" }
+  ],
+  "INVALID OBJECTS DETAILS": [
+    { "col1": "OWNER", "col2": "OBJECT_NAME", "col3": "OBJECT_TYPE", "col4": "STATUS" },
+    { "col1": "M91363", "col2": "GENERIC_PURGE_NEWW", "col3": "PROCEDURE", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "GET_PCT_FREE_HISTORY", "col3": "PROCEDURE", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "MONITOR_LSOMSPK3", "col3": "PROCEDURE", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "MONITOR_LSOMSPKC", "col3": "PROCEDURE", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "MONITOR_LSOMSPS3", "col3": "PROCEDURE", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "MONITOR_LSOMSPSL", "col3": "PROCEDURE", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "AUDIT_VIEW1", "col3": "VIEW", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "AUDIT_VIEW2", "col3": "VIEW", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "AUDIT_VIEW_WEEKLY", "col3": "VIEW", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "CING_DBA_ROLE_PRIVS_VW", "col3": "VIEW", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "RMT_DBA_LOCKS", "col3": "VIEW", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "NERS_INC", "col3": "VIEW", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "ADBA_PKG", "col3": "PACKAGE_BODY", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "ANALYZE_SPACE_USAGE_OMS", "col3": "PACKAGE_BODY", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "ANALYZE_SPACE_USAGE", "col3": "PACKAGE_BODY", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "ANALYZE_SCHEMA", "col3": "PACKAGE_BODY", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "ANALYZE_SPACE_USAGE_OMS_PSL", "col3": "PACKAGE_BODY", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "ADBA_2_PKG", "col3": "PACKAGE_BODY", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "ADBA_1_PKG", "col3": "PACKAGE_BODY", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "ADBA_LZ2574_PKG", "col3": "PACKAGE_BODY", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "ADBA_TRUNC", "col3": "PACKAGE_BODY", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "VAT", "col3": "FUNCTION", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "TAX_AMT", "col3": "FUNCTION", "col4": "INVALID" },
+    { "col1": "M91363", "col2": "TAX_AMT1", "col3": "PROCEDURE", "col4": "INVALID" }
+  ],
+  "ACTIVE SESSIONS DETAILS": [
+    { "col1": "USERNAME", "col2": "SID", "col3": "SERIAL#", "col4": "OSUSER", "col5": "MACHINE", "col6": "MODULE", "col7": "PROGRAM", "col8": "STATUS", "col9": "LOGON_TIME", "col10": "COUNT(*)" },
+    { "col1": "M91363", "col2": "974", "col3": "42391", "col4": "appdba", "col5": "zld06360", "col6": "SQL*Plus", "col7": "sqlplus@zld06360_(TNS_V1-V3)", "col8": "INACTIVE", "col9": "09-SEP-2025_01:04:57", "col10": "1" },
+    { "col1": "M91363", "col2": "587", "col3": "10847", "col4": "appdba", "col5": "zld06360", "col6": "SQL*Plus", "col7": "sqlplus@zld06360_(TNS_V1-V3)", "col8": "ACTIVE", "col9": "09-SEP-2025_02:54:07", "col10": "1" },
+    { "col1": "M91363", "col2": "969", "col3": "26170", "col4": "d1c2d606", "col5": "zld06360", "col6": "DBMS_SCHEDULER", "col7": "oracle@zld06360_(J001)", "col8": "ACTIVE", "col9": "09-SEP-2025_02:51:47", "col10": "1" }
+  ],
   "connectionString": "m91363/M0bil1tyAc4dia_25@u7cir1d1.db.att.com"
 };
 
 const Dashboard = () => {
+  const theme = useTheme();
   const [username, setUsername] = useState('');
   const [dbName, setDbName] = useState('');
   const [connectionString, setConnectionString] = useState('');
@@ -213,6 +261,11 @@ const Dashboard = () => {
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [timeoutError, setTimeoutError] = useState(false);
   const [timeoutMessage, setTimeoutMessage] = useState('');
+
+  // Profession and theme color for dashboard header
+  const profession = "Database Administrator";
+  const themeColor = theme.palette.primary.main; // Use theme primary color
+
 
 
 
@@ -342,6 +395,30 @@ const Dashboard = () => {
     });
   };
 
+  // Calculate total memory values
+  const calculateMemoryTotals = (memoryData) => {
+    if (!Array.isArray(memoryData)) return { total: 0 };
+    let total = 0;
+    memoryData.forEach(item => {
+      let value = 0;
+      if (item.col4) {
+        value = parseFloat(item.col4) || 0;
+      } else if (item.col3 && !isNaN(parseFloat(item.col3))) {
+        value = parseFloat(item.col3);
+      } else if (item.col2 && !isNaN(parseFloat(item.col2))) {
+        value = parseFloat(item.col2);
+      }
+      total += value;
+    });
+    return { total: total.toFixed(2) };
+  };
+
+  const sgaTotals = calculateMemoryTotals(data["SGA"] || []);
+  const pgaTotals = data["PGA"] ? {
+    inuse: parseFloat(data["PGA"].find(item => item.col3 === 'inuse')?.col4 || 0).toFixed(2),
+    allocated: parseFloat(data["PGA"].find(item => item.col3 === 'allocated')?.col4 || 0).toFixed(2)
+  } : { inuse: 0, allocated: 0 };
+
   // Normalize row keys so all rows have all keys (avoid "undefined" in table cells)
   const normalizeTableRows = (rows) => {
     if (!Array.isArray(rows) || rows.length === 0) return rows;
@@ -423,6 +500,12 @@ const Dashboard = () => {
      
       <Paper sx={{ p: 3, mb: 3 }}>
      
+        {/* <Typography variant="h4" gutterBottom sx={{ color: themeColor, fontWeight: 'bold', textAlign: 'center', mb: 2 }}>
+          Oracle Health Check Dashboard
+        </Typography>
+        <Typography variant="subtitle1" gutterBottom sx={{ color: themeColor, fontWeight: 'medium', textAlign: 'center', mb: 3 }}>
+          Profession: {profession}
+        </Typography> */}
 
         <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2} alignItems="center">
           <TextField
@@ -475,78 +558,59 @@ const Dashboard = () => {
             ) : (
               <>
                 <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <Card variant="outlined" sx={{ p: 2 }}>
-                      <Typography variant="h5" gutterBottom style={{ color: 'purple' }}>
-                        Database Information
-                      </Typography>
-                      <Grid container spacing={2}>
-                        {[
-                          "DATABASE NAME",
-                          "DATABASE VERSION",
-                          "INSTANCE NAME",
-                          "STARTUP TIME",
-                          "UPTIME",
-                          "OS LOAD",
-                          "REDO LOG SPACE REQUESTS",
-                          "DB MOUNT STATUS",
-                          "DB OPEN AND LOG MODE"
-                        ].map(label => (
-                          <Grid item xs={12} sm={6} md={4} lg={4} key={label}>
-                            <Typography sx={{ color: '#FFC72C', fontWeight: 'bold' }}>
-                              <strong>{label.replace(/_/g, ' ')}:</strong>{' '}
-                              <span
-                                className={
-                                  (() => {
-                                    const alertLevel = getAlertLevel(label, getValueFromSection(label));
-                                    if (alertLevel === 'critical') return 'critical-blink';
-                                    if (alertLevel === 'warning') return 'warning-pulse';
-                                    return '';
-                                  })()
+                  <Grid container spacing={1.5} sx={{ mb: 3 }}>
+                    <Grid item xs={12} md={3}>
+                      <Card variant="outlined" sx={{ p: 2, backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, height: '100%' }}>
+                        <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary, fontWeight: 'bold', textAlign: 'center' }}>
+                          Database Information
+                        </Typography>
+                        <TableContainer component={Paper} sx={{ backgroundColor: theme.palette.background.paper, borderRadius: 2 }}>
+                          <Table>
+                            <TableHead>
+                              <TableRow sx={{ backgroundColor: theme.palette.action.hover }}>
+                                <TableCell sx={{ color: theme.palette.text.primary, fontWeight: 'bold' }}>Parameter</TableCell>
+                                <TableCell sx={{ color: theme.palette.text.primary, fontWeight: 'bold' }}>Value</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {[
+                                "DATABASE NAME",
+                                "DATABASE VERSION",
+                                "INSTANCE NAME",
+                                "STARTUP TIME",
+                                "UPTIME",
+                                "OS LOAD",
+                                // "REDO LOG SPACE REQUESTS",
+                                "DB MOUNT STATUS",
+                                "DB OPEN AND LOG MODE"
+                              ].map((label, index) => {
+                                const value = getValueFromSection(label);
+                                const alertLevel = getAlertLevel(label, value);
+                                let valueStyle = { color: theme.palette.text.primary };
+                                let className = '';
+                                if (alertLevel === 'critical') {
+                                  valueStyle = { color: '#C40000', fontWeight: 'bold' };
+                                  className = 'critical-blink';
+                                } else if (alertLevel === 'warning') {
+                                  valueStyle = { color: '#FFA500', fontWeight: 'bold' };
+                                  className = 'warning-pulse';
                                 }
-                                style={
-                                  (() => {
-                                    const alertLevel = getAlertLevel(label, getValueFromSection(label));
-                                    if (alertLevel === 'critical') return { color: '#C40000', fontWeight: 'bold' };
-                                    if (alertLevel === 'warning') return { color: '#FFA500', fontWeight: 'bold' };
-                                    return { color: '#0096FF' };
-                                  })()
-                                }
-                              >
-                                {getValueFromSection(label)}
-                              </span>
-                            </Typography>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </Card>
-                  </Grid>
-                  {[
-                    ["BLOCKING SESSIONS", "Blocking Sessions"],
-                    ["DEADLOCKS", "Deadlocks"],
-                  ].map(([key, title]) =>
-                    data[key] ? (
-                      <Grid item xs={12} key={key}>
-                        <DataTable title={title} rows={normalizeTableRows(data[key])} />
-                      </Grid>
-                    ) : null
-                  )}
-                  {/* Arrange Tablespace, Sessions, and Memory Usage side by side */}
-                  <Grid container spacing={3} sx={{ width: '100%', mb: 3 }}>
-                    {/* Tablespace Usage */}
-                    <Grid item xs={12} md={4} sx={{ maxWidth: '100%', overflowX: 'auto' }}>
-                      <DataTable
-                        title="Tablespaces"
-                        rows={normalizeTableRows(preprocessTablespaceRows(data["TABLESPACE USAGE"]))}
-                        thresholds={{ "USED %": { warning: 85, critical: 90 } }}
-                      />
+                                return (
+                              <TableRow key={label} sx={{ backgroundColor: index % 2 === 0 ? theme.palette.action.selected : 'transparent' }}>
+                                <TableCell sx={{ color: 'black', fontWeight: 'bold', backgroundColor: '#F5F5F5' }}>{label.replace(/_/g, ' ')}</TableCell>
+                                <TableCell className={className} style={{ ...valueStyle, color: 'black' }} sx={{ backgroundColor: '#F5F5F5' }}>{value}</TableCell>
+                              </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Card>
                     </Grid>
-
-                    {/* Session Status */}
-                    <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column' }}>
                       {data["SESSIONS"] && (
-                        <Card variant="outlined" sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                          <Typography variant="h6" gutterBottom>
+                        <Card variant="outlined" sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                          <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'bold', textAlign: 'center' }}>
                             Session Status
                           </Typography>
                           <Grid container spacing={2} sx={{ mb: 2 }}>
@@ -556,7 +620,7 @@ const Dashboard = () => {
                               const alertLevel = getSessionAlertLevel(status, count);
                               const alertClass = getAlertClass(alertLevel);
                               const alertStyle = getAlertStyle(alertLevel);
-
+      
                               return (
                                 <Grid item xs={12} sm={6} key={idx}>
                                   <Paper
@@ -579,12 +643,10 @@ const Dashboard = () => {
                         </Card>
                       )}
                     </Grid>
-
-                    {/* Memory Usage */}
-                    <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
                       {(data["SGA"] || data["PGA"]) && (
-                        <Card variant="outlined" sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                          <Typography variant="h6" gutterBottom>
+                        <Card variant="outlined" sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                          <Typography variant="h6" gutterBottom sx={{ color: theme.palette.text.primary, fontWeight: 'bold', textAlign: 'center' }}>
                             Memory Usage
                           </Typography>
                           <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -594,13 +656,49 @@ const Dashboard = () => {
                               chartType="memory"
                             />
                           </Box>
+                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', mt: 1 }}>
+                            SGA Total: {sgaTotals.total} MB | PGA Inuse: {pgaTotals.inuse} MB | PGA Allocated: {pgaTotals.allocated} MB
+                          </Typography>
                         </Card>
                       )}
                     </Grid>
                   </Grid>
+                  {[
+                    ["BLOCKING SESSIONS", "Blocking Sessions"],
+                    ["DEADLOCKS", "Deadlocks"],
+                  ].map(([key, title]) => (
+                    <Grid item xs={12} md={6} key={key}>
+                      <Card variant="outlined" sx={{ p: 2 }}>
+                        {data[key] ? (
+                          <DataTable title={title} rows={normalizeTableRows(data[key])} />
+                        ) : (
+                          <Box sx={{ textAlign: 'center', py: 4 }}>
+                            <Typography variant="h6" gutterBottom sx={{ color: theme.palette.text.primary, fontWeight: 'bold', textAlign: 'center' }}>
+                              {title}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                              No {title.toLowerCase()} detected
+                            </Typography>
+                          </Box>
+                        )}
+                      </Card>
+                    </Grid>
+                  ))}
+                  {/* Tablespace Usage */}
+                  <Grid item xs={12} md={6} sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+                    <Card variant="outlined" sx={{ p: 2 }}>
+                      <DataTable
+                        title="Tablespaces"
+                        rows={normalizeTableRows(preprocessTablespaceRows(data["TABLESPACE USAGE"]))}
+                        thresholds={{ "USED %": { warning: 85, critical: 90 } }}
+                      />
+                    </Card>
+                  </Grid>
                   {data["INVALID OBJECTS SUMMARY"] && (
                     <Grid item xs={12}>
-                      <DataTable title="Session Status Summary" rows={normalizeTableRows(data["INVALID OBJECTS SUMMARY"])} />
+                      <Card variant="outlined" sx={{ p: 2 }}>
+                        <DataTable title="Session Status Summary" rows={normalizeTableRows(data["INVALID OBJECTS SUMMARY"])} />
+                      </Card>
                     </Grid>
                   )}
                   {/* The rest of your dashboard tables */}
@@ -622,7 +720,9 @@ const Dashboard = () => {
 
                   {data["ACTIVE SESSIONS DETAILS"] && (
                     <Grid item xs={12}>
-                      <DataTable title="Active Sessions Details" rows={normalizeTableRows(data["ACTIVE SESSIONS DETAILS"])} />
+                      <Card variant="outlined" sx={{ p: 2 }}>
+                        <DataTable title="Active Sessions Details" rows={normalizeTableRows(data["ACTIVE SESSIONS DETAILS"])} />
+                      </Card>
                     </Grid>
                   )}
 
@@ -632,17 +732,25 @@ const Dashboard = () => {
                     ["ARCHIVE LOG GENERATION RATE", "Archive Log Generation Rate"],
                     ["TOP SQL BY RESOURCE USAGE", "Top SQL by Resource Usage"],
                     ["LIBRARY CACHE HIT RATIO", "Library Cache Hit Ratio", { "LIBRARY CACHE HIT RATIO": { warning: 95, critical: 90, isGoodHigh: true } }]
-                  ].map(([key, title, thresholds]) =>
-                    data[key] ? (
+                  ].map((item) => {
+                    const key = item[0];
+                    const title = item[1];
+                    const thresholds = item[2] || {};
+                    return data[key] ? (
                       <Grid item xs={12} key={key}>
-                        <DataTable
-                          title={title}
-                          rows={normalizeTableRows(data[key])}
-                          thresholds={thresholds}
-                        />
+                        <Card variant="outlined" sx={{ p: 2 }}>
+                          <Typography variant="h6" gutterBottom sx={{ color: theme.palette.text.primary, fontWeight: 'bold', textAlign: 'center' }}>
+                            {title}
+                          </Typography>
+                          <DataTable
+                            title=""
+                            rows={normalizeTableRows(data[key])}
+                            thresholds={thresholds}
+                          />
+                        </Card>
                       </Grid>
-                    ) : null
-                  )}
+                    ) : null;
+                  })}
                 </Grid>
               </>
             )}

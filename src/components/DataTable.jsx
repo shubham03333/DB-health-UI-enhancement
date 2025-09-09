@@ -3,6 +3,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Paper, Typography
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 /**
  * thresholds: { <columnLabel>: { warning: xx, critical: yy, isGoodHigh?: boolean }, ... }
@@ -10,6 +11,7 @@ import {
  *   thresholds={{ "USED %": { warning: 85, critical: 90 }, "BUFFER CACHE HIT RATIO": { warning: 90, critical: 85, isGoodHigh: true } }}
  */
 const DataTable = ({ title, rows, thresholds = {} }) => {
+  const theme = useTheme();
   if (!rows || rows.length === 0) return null;
 
   // Detect/convert generic columns
@@ -45,23 +47,23 @@ const DataTable = ({ title, rows, thresholds = {} }) => {
 
 
   return (
-    <TableContainer component={Paper} sx={{ mb: 3 }}>
-      <Typography variant="subtitle1" sx={{ p: 2, fontWeight: 'bold', color: 'var(--accent)' }}>{title}</Typography>
+    <TableContainer component={Paper} sx={{ mb: 3, backgroundColor: theme.palette.background.paper }}>
+      <Typography variant="h6" gutterBottom sx={{ color: theme.palette.text.primary, fontWeight: 'bold', textAlign: 'center' }}>{title}</Typography>
       <Table size="small" sx={{
         '& .MuiTableRow-root:nth-of-type(odd)': {
-          backgroundColor: 'var(--bg-secondary)',
+          backgroundColor: theme.palette.action.hover,
         },
         '& .MuiTableRow-root:nth-of-type(even)': {
-          backgroundColor: 'var(--bg-tertiary)',
+          backgroundColor: 'transparent',
         },
         '& .MuiTableCell-root': {
-          borderBottom: '1px solid var(--border)',
-          color: 'var(--text-primary)',
-          backgroundColor: 'var(--bg-secondary)',
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          color: theme.palette.text.primary,
+          backgroundColor: theme.palette.background.paper,
         },
         '& .MuiTableHead-root .MuiTableCell-root': {
-          backgroundColor: 'var(--bg-tertiary)',
-          color: 'var(--text-primary)',
+          backgroundColor: theme.palette.action.selected,
+          color: theme.palette.text.primary,
           fontWeight: 'bold',
         },
       }}>

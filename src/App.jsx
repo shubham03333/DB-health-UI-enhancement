@@ -21,7 +21,7 @@ function App() {
     <ThemeProvider>
       <div style={{ paddingTop: '6rem' }}>
         <Typography variant="h4" gutterBottom style={{ color: 'primary', fontWeight:'bold' }}>
-          Oracle DB Health Monitoring
+          Oracle Health Check Dashboard
         </Typography>
         <nav style={{
           display: 'flex',
