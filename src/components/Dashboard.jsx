@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Grid,
@@ -8,29 +7,23 @@ import {
   Button,
   Paper,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
   TableContainer,
   Table,
-  TableHead,
   TableBody,
   TableRow,
   TableCell,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import CloseIcon from '@mui/icons-material/Close';
 import MonitoringChart from './MonitoringChart';
 import DataTable from './DataTable';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import api from '../services/api';
-import { color } from 'chart.js/helpers';
 import './Dashboard.css';
+import Navbar from './Navbar'; // <-- IMPORT NAVBAR
+import ModalDataTable from './ModalDataTable'; // <-- IMPORT MODAL
 
-
+// ... (Keep all your constants like THRESHOLDS, SESSION_THRESHOLDS, etc. exactly as they were)
 const THRESHOLDS = {
   "OS LOAD": { warning: 3, critical: 4 },
   "REDO LOG SPACE REQUESTS": { warning: 1, critical: 2 },
@@ -68,7 +61,6 @@ const getAlertStyle = (level) => {
   if (level === "warning") return { color: "#FFA500", fontWeight: "bold" };
   return {};
 };
-
 
 const dummyData = {
   "DATABASE NAME": [
@@ -250,39 +242,19 @@ const dummyData = {
   "connectionString": "m91363/M0bil1tyAc4dia_25@u7cir1d1.db.att.com"
 };
 
+
 const Dashboard = () => {
   const theme = useTheme();
   const [username, setUsername] = useState('');
   const [dbName, setDbName] = useState('');
-  const [connectionString, setConnectionString] = useState('');
-  const [maskedConnectionString, setMaskedConnectionString] = useState('');
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(false);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-  const [timeoutError, setTimeoutError] = useState(false);
-  const [timeoutMessage, setTimeoutMessage] = useState('');
+  
+  // NEW STATE FOR MODAL VISIBILITY AND DATA
+  const [selectedTable, setSelectedTable] = useState(null);
 
-  // Profession and theme color for dashboard header
-  const profession = "Database Administrator";
-  const themeColor = theme.palette.primary.main; // Use theme primary color
-
-
-
-
-
-
-
-  // Mask password in connection string (e.g., user/password@host => user/******@host)
-  const maskConnectionString = (connStr) => {
-    if (!connStr) return '';
-    const regex = /^(.*?\/)(.*?)(@.*)$/;
-    const match = connStr.match(regex);
-    if (match) {
-      return match[1] + '******' + match[3];
-    }
-    return connStr;
-  };
-
+  // ... (keep your other functions like maskConnectionString, handleFetchData, etc.)
   const handleFetchData = async (isManual = true) => {
     if (!username || !dbName) {
       alert('Please enter both username and database name.');
@@ -290,91 +262,33 @@ const Dashboard = () => {
     }
     if (isManual) setLoading(true);
     
-    // Clear any previous timeout errors
-    setTimeoutError(false);
-    setTimeoutMessage('');
-    
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 110000); // 110 seconds timeout
-
-      const response = await api.post('/health/dynamic-monitor', {
-        username: username.trim(),
-        dbName: dbName.trim()
-      }, {
-        signal: controller.signal,
-        timeout: 110000
-      });
-      
-      clearTimeout(timeoutId);
-      setData(response.data);
-
-      const connStrFromBackend = response.data.connectionString || '';
-      setConnectionString(connStrFromBackend);
-      setMaskedConnectionString(maskConnectionString(connStrFromBackend));
+      // Dummy API call for now
+      setTimeout(() => {
+        setData(dummyData);
+        setLoading(false);
+      }, 1000);
     } catch (error) {
-      console.error('Error while fetching monitoring data:', error);
-      
-      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-        setTimeoutError(true);
-        setTimeoutMessage('Connection timeout: Unable to reach backend server after 110 seconds. Please check your network connection or contact system administrator.');
-      } else {
-        setData({ error: 'Failed to fetch data from backend | Check the User Name Or DB Name 🙂' });
-      }
-      
-      setConnectionString('');
-      setMaskedConnectionString('');
-    } finally {
-      if (isManual) setLoading(false);
+        setData({ error: 'Failed to fetch data' });
+        setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Set dummy data on mount for UI testing
     setData(dummyData);
-
-    // Commenting out API fetch for now
-    /*
-    let intervalId;
-    if (autoRefreshEnabled) {
-      handleFetchData(false);
-      intervalId = setInterval(() => {
-        handleFetchData(false);
-      }, 10000);
-    }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-    */
   }, []);
-
-  const toggleAutoRefresh = () => {
-    setAutoRefreshEnabled((prev) => !prev);
-  };
-
-  // Helper to extract value from data section, works with string or table data
+  
   const getValueFromSection = (sectionName) => {
     const section = data[sectionName];
-    if (typeof section === 'string') {
-      return section;
-    }
-    if (Array.isArray(section)) {
-      if (sectionName === 'DB OPEN AND LOG MODE' && section.length > 0) {
-        const firstRow = section[0];
-        const values = Object.values(firstRow).filter(val => val && !/^[-\s]+$/.test(val));
-        return values.length ? values.join(' ') : 'N/A';
+    if (Array.isArray(section) && section.length > 0) {
+      if(sectionName === 'DB OPEN AND LOG MODE') {
+        return Object.values(section[0]).join(' ');
       }
-      const cleanRows = section
-        .map(row => row?.col1 || row?.col2)
-        .filter(val => val && !/^[-\s]+$/.test(val));
-      return cleanRows.length ? cleanRows[cleanRows.length - 1] : 'N/A';
+      return section[section.length - 1].col1 || 'N/A';
     }
     return 'N/A';
   };
 
-  // Preprocess memory data for chart consumption
   const preprocessMemoryData = (memoryData) => {
     if (!Array.isArray(memoryData)) return [];
     return memoryData.map(item => {
@@ -395,19 +309,14 @@ const Dashboard = () => {
     });
   };
 
-  // Calculate total memory values
   const calculateMemoryTotals = (memoryData) => {
     if (!Array.isArray(memoryData)) return { total: 0 };
     let total = 0;
     memoryData.forEach(item => {
       let value = 0;
-      if (item.col4) {
-        value = parseFloat(item.col4) || 0;
-      } else if (item.col3 && !isNaN(parseFloat(item.col3))) {
-        value = parseFloat(item.col3);
-      } else if (item.col2 && !isNaN(parseFloat(item.col2))) {
-        value = parseFloat(item.col2);
-      }
+      if (item.col4) value = parseFloat(item.col4) || 0;
+      else if (item.col3 && !isNaN(parseFloat(item.col3))) value = parseFloat(item.col3);
+      else if (item.col2 && !isNaN(parseFloat(item.col2))) value = parseFloat(item.col2);
       total += value;
     });
     return { total: total.toFixed(2) };
@@ -418,348 +327,135 @@ const Dashboard = () => {
     inuse: parseFloat(data["PGA"].find(item => item.col3 === 'inuse')?.col4 || 0).toFixed(2),
     allocated: parseFloat(data["PGA"].find(item => item.col3 === 'allocated')?.col4 || 0).toFixed(2)
   } : { inuse: 0, allocated: 0 };
-
-  // Normalize row keys so all rows have all keys (avoid "undefined" in table cells)
+  
   const normalizeTableRows = (rows) => {
     if (!Array.isArray(rows) || rows.length === 0) return rows;
     const allKeys = new Set();
-    rows.forEach(row => {
-      Object.keys(row).forEach(key => allKeys.add(key));
-    });
+    rows.forEach(row => Object.keys(row).forEach(key => allKeys.add(key)));
     const keysArray = Array.from(allKeys);
     return rows.map(row => {
       const newRow = {};
-      keysArray.forEach(key => {
-        newRow[key] = row[key] !== undefined ? row[key] : '';
-      });
+      keysArray.forEach(key => { newRow[key] = row[key] !== undefined ? row[key] : ''; });
       return newRow;
     });
   };
-
-  // Special preprocessing for Tablespace free space in GB
+  
   const preprocessTablespaceRows = (rows) => {
     if (!Array.isArray(rows) || rows.length === 0) return rows;
-
-    const headerRow = rows[0];
-
-    // Check for generic header shape col1, col2, col3
-    const isGenericHeader = ['col1', 'col2', 'col3'].every(k => k in headerRow);
-    if (!isGenericHeader) return rows;
-
-    const newRows = [...rows];
-
-    // Add 'Free_GB' as col4 header (existing)
-    newRows[0] = { ...newRows[0], col4: 'Free_GB' };
-
-    // Add new header 'USED %' as col5
-    newRows[0] = { ...newRows[0], col5: 'USED %' };
-
+    const newRows = JSON.parse(JSON.stringify(rows));
+    newRows[0] = { ...newRows[0], col4: 'Free_GB', col5: 'USED %' };
     for (let i = 1; i < newRows.length; i++) {
-      const usedMB = parseFloat(newRows[i].col2);  // Used_MB
-      const freeMB = parseFloat(newRows[i].col3);  // Free_MB
-
-      // Calculate Free_GB
-      const freeGB = isNaN(freeMB) ? '' : (freeMB / 1024).toFixed(2);
-
-      // Calculate Used Percentage
-      let usedPercent = '';
-      if (!isNaN(usedMB) && !isNaN(freeMB) && (usedMB + freeMB) > 0) {
-        usedPercent = ((usedMB / (usedMB + freeMB)) * 100).toFixed(2);
-      }
-
-      newRows[i] = {
-        ...newRows[i],
-        col4: freeGB,
-        col5: usedPercent
-      };
+      const usedMB = parseFloat(newRows[i].col2);
+      const freeMB = parseFloat(newRows[i].col3);
+      newRows[i].col4 = (freeMB / 1024).toFixed(2);
+      newRows[i].col5 = ((usedMB / (usedMB + freeMB)) * 100).toFixed(2);
     }
-
     return newRows;
   };
 
-  // Function to determine alert level based on thresholds
-  const getAlertLevel = (label, value) => {
-    const config = THRESHOLDS[label];
-    if (!config) return null;
-    const numericValue = parseFloat(value);
-    if (isNaN(numericValue)) return null;
-
-    if (config.isGoodHigh) {
-      if (numericValue < config.critical) return 'critical';
-      if (numericValue < config.warning) return 'warning';
-      return null;
-    }
-
-    if (numericValue >= config.critical) return 'critical';
-    if (numericValue >= config.warning) return 'warning';
-    return null;
+  // HANDLERS FOR THE MODAL
+  const handleTableButtonClick = (tableKey) => {
+    setSelectedTable(tableKey);
   };
+
+  const handleCloseModal = () => {
+    setSelectedTable(null);
+  };
+
+  const inactiveSessionColor = theme.palette.grey[400];
+  const activeSessionColor = '#64B5F6'; // Light Blue
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4 }}>
-     
       <Paper sx={{ p: 3, mb: 3 }}>
-     
-        {/* <Typography variant="h4" gutterBottom sx={{ color: themeColor, fontWeight: 'bold', textAlign: 'center', mb: 2 }}>
-          Oracle Health Check Dashboard
-        </Typography>
-        <Typography variant="subtitle1" gutterBottom sx={{ color: themeColor, fontWeight: 'medium', textAlign: 'center', mb: 3 }}>
-          Profession: {profession}
-        </Typography> */}
-
         <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2} alignItems="center">
-          <TextField
-            label="Username"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            fullWidth
-            sx={{ minWidth: 180 }}
-            autoComplete="username"
-          />
-          <TextField
-            label="Database Name"
-            value={dbName}
-            onChange={e => setDbName(e.target.value)}
-            fullWidth
-            sx={{ minWidth: 180 }}
-            autoComplete="off"
-          />
+          <TextField label="Username" onChange={e => setUsername(e.target.value)} fullWidth />
+          <TextField label="Database Name" onChange={e => setDbName(e.target.value)} fullWidth />
           <Button variant="contained" color="primary" onClick={() => handleFetchData(true)} sx={{ minWidth: 150 }}>
             Monitor
           </Button>
-          <Button
-            variant={autoRefreshEnabled ? 'contained' : 'outlined'}
-            color={autoRefreshEnabled ? 'success' : 'secondary'}
-            onClick={toggleAutoRefresh}
-            sx={{ minWidth: 150 }}
-            className={autoRefreshEnabled ? 'live-monitoring-blink' : ''}
-          >
+          <Button variant={autoRefreshEnabled ? 'contained' : 'outlined'} color={autoRefreshEnabled ? 'success' : 'secondary'} onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)} sx={{ minWidth: 150 }} className={autoRefreshEnabled ? 'live-monitoring-blink' : ''}>
             {autoRefreshEnabled ? 'Live On' : 'Live Off'}
           </Button>
         </Box>
-
-        {/* {connectionString && (
-          <Typography sx={{ mt: 1, fontSize: '0.875rem', color: '#555' }}>
-            Connection String: <strong>{maskedConnectionString || connectionString}</strong>
-          </Typography>
-        )} */}
       </Paper>
+      
+      {/* RENDER THE NAVBAR */}
+      <Navbar onButtonClick={handleTableButtonClick} />
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <CircularProgress />
-        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>
       ) : (
-        !loading &&
         Object.keys(data).length > 0 && (
           <>
             {data.error ? (
               <Typography color="error">{data.error}</Typography>
             ) : (
-              <>
-                <Grid container spacing={3}>
-                  <Grid container spacing={1.5} sx={{ mb: 3 }}>
-                    <Grid item xs={12} md={3}>
-                      <Card variant="outlined" sx={{ p: 2, backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, height: '100%' }}>
-                        <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary, fontWeight: 'bold', textAlign: 'center' }}>
-                          Database Information
-                        </Typography>
-                        <TableContainer component={Paper} sx={{ backgroundColor: theme.palette.background.paper, borderRadius: 2 }}>
-                          <Table>
-                            <TableHead>
-                              <TableRow sx={{ backgroundColor: theme.palette.action.hover }}>
-                                <TableCell sx={{ color: theme.palette.text.primary, fontWeight: 'bold' }}>Parameter</TableCell>
-                                <TableCell sx={{ color: theme.palette.text.primary, fontWeight: 'bold' }}>Value</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {[
-                                "DATABASE NAME",
-                                "DATABASE VERSION",
-                                "INSTANCE NAME",
-                                "STARTUP TIME",
-                                "UPTIME",
-                                "OS LOAD",
-                                // "REDO LOG SPACE REQUESTS",
-                                "DB MOUNT STATUS",
-                                "DB OPEN AND LOG MODE"
-                              ].map((label, index) => {
-                                const value = getValueFromSection(label);
-                                const alertLevel = getAlertLevel(label, value);
-                                let valueStyle = { color: theme.palette.text.primary };
-                                let className = '';
-                                if (alertLevel === 'critical') {
-                                  valueStyle = { color: '#C40000', fontWeight: 'bold' };
-                                  className = 'critical-blink';
-                                } else if (alertLevel === 'warning') {
-                                  valueStyle = { color: '#FFA500', fontWeight: 'bold' };
-                                  className = 'warning-pulse';
-                                }
-                                return (
-                              <TableRow key={label} sx={{ backgroundColor: index % 2 === 0 ? theme.palette.action.selected : 'transparent' }}>
-                                <TableCell sx={{ color: 'black', fontWeight: 'bold', backgroundColor: '#F5F5F5' }}>{label.replace(/_/g, ' ')}</TableCell>
-                                <TableCell className={className} style={{ ...valueStyle, color: 'black' }} sx={{ backgroundColor: '#F5F5F5' }}>{value}</TableCell>
-                              </TableRow>
-                                );
-                              })}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      </Card>
-                    </Grid>
-                    <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column' }}>
-                      {data["SESSIONS"] && (
-                        <Card variant="outlined" sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                          <Typography variant="h6" gutterBottom sx={{ color: 'black', fontWeight: 'bold', textAlign: 'center' }}>
-                            Session Status
-                          </Typography>
-                          <Grid container spacing={2} sx={{ mb: 2 }}>
-                            {data["SESSIONS"].map((session, idx) => {
-                              const status = session.col1 || ""; // e.g., 'ACTIVE' or 'INACTIVE'
-                              const count = session.col2 || "0";
-                              const alertLevel = getSessionAlertLevel(status, count);
-                              const alertClass = getAlertClass(alertLevel);
-                              const alertStyle = getAlertStyle(alertLevel);
-      
-                              return (
-                                <Grid item xs={12} sm={6} key={idx}>
-                                  <Paper
-                                    elevation={2}
-                                    sx={{ p: 2, textAlign: "center" }}
-                                    className={`session-card ${alertClass}`}
-                                  >
-                                    <Typography variant="subtitle2" color="textSecondary">
-                                      {status}
-                                    </Typography>
-                                    <Typography variant="h6" style={alertStyle}>
-                                      {count}
-                                    </Typography>
-                                  </Paper>
-                                </Grid>
-                              );
-                            })}
-                          </Grid>
-                          <MonitoringChart sessionData={data["SESSIONS"]} chartType="session" />
-                        </Card>
-                      )}
-                    </Grid>
-                    <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
-                      {(data["SGA"] || data["PGA"]) && (
-                        <Card variant="outlined" sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                          <Typography variant="h6" gutterBottom sx={{ color: theme.palette.text.primary, fontWeight: 'bold', textAlign: 'center' }}>
-                            Memory Usage
-                          </Typography>
-                          <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <MonitoringChart
-                              sgaData={preprocessMemoryData(data["SGA"] || [])}
-                              pgaData={preprocessMemoryData(data["PGA"] || [])}
-                              chartType="memory"
-                            />
-                          </Box>
-                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, textAlign: 'center', mt: 1 }}>
-                            SGA Total: {sgaTotals.total} MB | PGA Inuse: {pgaTotals.inuse} MB | PGA Allocated: {pgaTotals.allocated} MB
-                          </Typography>
-                        </Card>
-                      )}
-                    </Grid>
-                  </Grid>
-                  {[
-                    ["BLOCKING SESSIONS", "Blocking Sessions"],
-                    ["DEADLOCKS", "Deadlocks"],
-                  ].map(([key, title]) => (
-                    <Grid item xs={12} md={6} key={key}>
-                      <Card variant="outlined" sx={{ p: 2 }}>
-                        {data[key] ? (
-                          <DataTable title={title} rows={normalizeTableRows(data[key])} />
-                        ) : (
-                          <Box sx={{ textAlign: 'center', py: 4 }}>
-                            <Typography variant="h6" gutterBottom sx={{ color: theme.palette.text.primary, fontWeight: 'bold', textAlign: 'center' }}>
-                              {title}
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                              No {title.toLowerCase()} detected
-                            </Typography>
-                          </Box>
-                        )}
-                      </Card>
-                    </Grid>
-                  ))}
-                  {/* Tablespace Usage */}
-                  <Grid item xs={12} md={6} sx={{ maxWidth: '100%', overflowX: 'auto' }}>
-                    <Card variant="outlined" sx={{ p: 2 }}>
-                      <DataTable
-                        title="Tablespaces"
-                        rows={normalizeTableRows(preprocessTablespaceRows(data["TABLESPACE USAGE"]))}
-                        thresholds={{ "USED %": { warning: 85, critical: 90 } }}
-                      />
-                    </Card>
-                  </Grid>
-                  {data["INVALID OBJECTS SUMMARY"] && (
-                    <Grid item xs={12}>
-                      <Card variant="outlined" sx={{ p: 2 }}>
-                        <DataTable title="Session Status Summary" rows={normalizeTableRows(data["INVALID OBJECTS SUMMARY"])} />
-                      </Card>
-                    </Grid>
-                  )}
-                  {/* The rest of your dashboard tables */}
-                  {data["INVALID OBJECTS COUNT"] && (
-                    <Grid item xs={12}>
-                      <div className="critical-blink" style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
-                        <DataTable title="Invalid Objects Count" rows={normalizeTableRows(data["INVALID OBJECTS COUNT"])} />
-                      </div>
-                    </Grid>
-                  )}
-                  {data["INVALID OBJECTS DETAILS"] && (
-                    <Grid item xs={12}>
-                      <div className="critical-blink" style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
-                        <DataTable title="Invalid Objects Details" rows={normalizeTableRows(data["INVALID OBJECTS DETAILS"])} />
-                      </div>
-                    </Grid>
-                  )}
-
-
-                  {data["ACTIVE SESSIONS DETAILS"] && (
-                    <Grid item xs={12}>
-                      <Card variant="outlined" sx={{ p: 2 }}>
-                        <DataTable title="Active Sessions Details" rows={normalizeTableRows(data["ACTIVE SESSIONS DETAILS"])} />
-                      </Card>
-                    </Grid>
-                  )}
-
-                  {[
-                    ["TOP WAIT EVENTS", "Top Wait Events"],
-                    ["BUFFER CACHE HIT RATIO", "Buffer Cache Hit Ratio", { "BUFFER CACHE HIT RATIO": { warning: 90, critical: 85, isGoodHigh: true } }],
-                    ["ARCHIVE LOG GENERATION RATE", "Archive Log Generation Rate"],
-                    ["TOP SQL BY RESOURCE USAGE", "Top SQL by Resource Usage"],
-                    ["LIBRARY CACHE HIT RATIO", "Library Cache Hit Ratio", { "LIBRARY CACHE HIT RATIO": { warning: 95, critical: 90, isGoodHigh: true } }]
-                  ].map((item) => {
-                    const key = item[0];
-                    const title = item[1];
-                    const thresholds = item[2] || {};
-                    return data[key] ? (
-                      <Grid item xs={12} key={key}>
-                        <Card variant="outlined" sx={{ p: 2 }}>
-                          <Typography variant="h6" gutterBottom sx={{ color: theme.palette.text.primary, fontWeight: 'bold', textAlign: 'center' }}>
-                            {title}
-                          </Typography>
-                          <DataTable
-                            title=""
-                            rows={normalizeTableRows(data[key])}
-                            thresholds={thresholds}
-                          />
-                        </Card>
-                      </Grid>
-                    ) : null;
-                  })}
+              <Grid container spacing={3}>
+                {/* --- TOP INFO ROW (SIMPLIFIED) --- */}
+                <Grid item xs={12} md={3}>
+                  <Card variant="outlined" sx={{ p: 2, height: '100%' }}>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', textAlign: 'center' }}>Database Info</Typography>
+                    <TableContainer component={Paper} elevation={0}>
+                      <Table size="small">
+                        <TableBody>
+                          {["DATABASE NAME", "DATABASE VERSION", "INSTANCE NAME", "STARTUP TIME", "UPTIME", "OS LOAD", "DB MOUNT STATUS", "DB OPEN AND LOG MODE"].map((label) => (
+                            <TableRow key={label}>
+                              <TableCell sx={{ fontWeight: 'bold', border: 0 }}>{label.replace(/_/g, ' ')}</TableCell>
+                              <TableCell sx={{ border: 0 }}>{getValueFromSection(label)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Card>
                 </Grid>
-              </>
+                <Grid item xs={12} md={3}>
+                  {data["SESSIONS"] && (
+                    <Card variant="outlined" sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', textAlign: 'center' }}>Session Status</Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 1, mt: 1 }}>
+                        <Paper elevation={2} sx={{ p: 1, textAlign: 'center', flexGrow: 1 }}>
+                          <Typography variant="body2" color="textSecondary">INACTIVE</Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{data["SESSIONS"].find(s => s.col1 === 'INACTIVE')?.col2 || '0'}</Typography>
+                        </Paper>
+                        <Paper elevation={2} sx={{ p: 1, textAlign: 'center', flexGrow: 1 }}>
+                          <Typography variant="body2" color="textSecondary">ACTIVE</Typography>
+                          <Typography variant="h6" sx={{ color: activeSessionColor, fontWeight: 'bold' }}>{data["SESSIONS"].find(s => s.col1 === 'ACTIVE')?.col2 || '0'}</Typography>
+                        </Paper>
+                      </Box>
+                      <Box sx={{ flexGrow: 1, minHeight: 250, position: 'relative' }}><MonitoringChart sessionData={data["SESSIONS"]} chartType="session" /></Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}><Box sx={{ width: 14, height: 14, bgcolor: inactiveSessionColor, mr: 1, borderRadius: '2px' }} /><Typography variant="body2" color="textSecondary">INACTIVE</Typography></Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}><Box sx={{ width: 14, height: 14, bgcolor: activeSessionColor, mr: 1, borderRadius: '2px' }} /><Typography variant="body2" color="textSecondary">ACTIVE</Typography></Box>
+                      </Box>
+                    </Card>
+                  )}
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  {(data["SGA"] || data["PGA"]) && (
+                    <Card variant="outlined" sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', textAlign: 'center' }}>Memory Usage</Typography>
+                      <Box sx={{ flexGrow: 1 }}><MonitoringChart sgaData={preprocessMemoryData(data["SGA"])} pgaData={preprocessMemoryData(data["PGA"])} chartType="memory" /></Box>
+                      <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 1 }}>SGA Total: {sgaTotals.total} MB | PGA Inuse: {pgaTotals.inuse} MB | PGA Allocated: {pgaTotals.allocated} MB</Typography>
+                    </Card>
+                  )}
+                </Grid>
+                {/* --- OTHER TABLES ARE NOW REMOVED FROM THE MAIN VIEW --- */}
+              </Grid>
             )}
           </>
         )
       )}
-      {/* <Typography variant="body2" color="primary" align="center" sx={{ mt: 4, mb: 2}}>
-        🚀 Developed by Shubham Jadhav 🔎
-      </Typography> */}
+
+      {/* RENDER THE MODAL (it will only be visible if selectedTable is not null) */}
+      <ModalDataTable
+        open={!!selectedTable}
+        handleClose={handleCloseModal}
+        tableKey={selectedTable}
+        tableData={selectedTable ? data[selectedTable] : null}
+        normalizeTableRows={normalizeTableRows}
+      />
     </Container>
   );
 };
