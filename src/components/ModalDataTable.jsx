@@ -62,4 +62,3 @@ const ModalDataTable = ({ open, handleClose, tableKey, tableData, normalizeTable
 };
 
 export default ModalDataTable;
-
